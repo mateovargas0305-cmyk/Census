@@ -69,7 +69,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;b
 .topbar-period{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-3);margin-top:2px}
 .btn-add{height:36px;padding:0 16px;background:var(--gold);color:var(--bg-0);border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .2s;-webkit-tap-highlight-color:transparent;white-space:nowrap}
 .btn-add:active{transform:scale(.95);opacity:.9}
-.btn-ai{height:36px;width:36px;background:transparent;color:var(--gold);border:1.5px solid var(--gold);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;-webkit-tap-highlight-color:transparent;flex-shrink:0}
+.btn-ai{height:36px;width:36px;background:transparent;color:var(--gold);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;-webkit-tap-highlight-color:transparent;flex-shrink:0}
 .btn-ai:active{transform:scale(.92);background:var(--gold-glow)}
 .btn-ai:hover{background:var(--gold-glow)}
 .btn-ai.recording{background:var(--red);color:#fff;border-color:var(--red);animation:aiPulse 1.4s ease-in-out infinite}
@@ -849,7 +849,7 @@ canvas{display:block}
   <div style="display:flex;gap:8px;align-items:center">
     <button class="btn-ai" id="btnAI" onclick="openAIModal()" title="Asistente IA" style="display:none">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        <path d="M12 2 L13.5 8.5 L20 10 L13.5 11.5 L12 18 L10.5 11.5 L4 10 L10.5 8.5 Z"/>
       </svg>
     </button>
     <button class="btn-add" onclick="openModal()">＋ Nueva</button>
@@ -1738,6 +1738,23 @@ window.addEventListener('DOMContentLoaded',()=>{
       }
     });
   }
+
+  // Teclado virtual: reducir thread para que no tape los mensajes
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',()=>{
+      const overlay=document.getElementById('aiModalOverlay');
+      if(!overlay||!overlay.classList.contains('open'))return;
+      const thread=document.getElementById('aiChatThread');
+      if(!thread)return;
+      const kbH=window.innerHeight-window.visualViewport.height;
+      if(kbH>100){
+        thread.style.maxHeight=Math.max(80,window.visualViewport.height-175)+'px';
+        thread.scrollTop=thread.scrollHeight;
+      }else{
+        thread.style.maxHeight='';
+      }
+    });
+  }
 });
 
 function loadData(){
@@ -2001,7 +2018,6 @@ function openAIModal(){
   document.getElementById('aiHint').textContent='';
   document.getElementById('aiModalOverlay').classList.add('open');
   updateAIChatUI();
-  setTimeout(()=>document.getElementById('aiInput').focus(),350);
 }
 
 function closeAIModal(){
