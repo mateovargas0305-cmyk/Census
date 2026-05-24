@@ -8,24 +8,25 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Census">
 <meta name="application-name" content="Census">
-<!-- theme-color dinámico: lo seteamos en JS según el tema activo. Default = claro para que matchee con el ícono canónico. -->
-<meta name="theme-color" id="metaThemeColor" content="#ede4d7">
+<meta name="theme-color" id="metaThemeColor" content="#09090b">
 <meta name="description" content="Census — finanzas personales">
 <title>Census</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="nuevo-icono-dark.png">
 <link rel="icon" id="faviconLink" type="image/png" href="nuevo-icono-dark.png">
-<!-- Anti-flash: aplicar el tema ANTES de que renderice el CSS, evita flash blanco al cargar -->
+<!-- Anti-flash: corre sincrónicamente antes de cualquier render para fijar tema, fondo y theme-color -->
 <script>
 (function(){
   try{
     var saved=localStorage.getItem('census_theme');
     var prefersLight=window.matchMedia&&window.matchMedia('(prefers-color-scheme:light)').matches;
     var theme=saved||(prefersLight?'light':'dark');
-    document.documentElement.setAttribute('data-theme',theme);
-    // Setear color de fondo del body inmediatamente para evitar el flash blanco del browser
     var bg=theme==='dark'?'#09090b':'#f0ebe0';
+    document.documentElement.setAttribute('data-theme',theme);
     document.documentElement.style.backgroundColor=bg;
+    // Actualizar theme-color del status bar en el mismo tick, antes de cualquier pintura
+    var mc=document.getElementById('metaThemeColor');
+    if(mc)mc.content=bg;
   }catch(e){}
 })();
 </script>
@@ -830,7 +831,7 @@ canvas{display:block}
 @keyframes kpiSlideUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
-<body data-theme="dark">
+<body>
 
 <header class="topbar">
   <div>
