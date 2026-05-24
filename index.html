@@ -12,13 +12,9 @@
 <meta name="theme-color" id="metaThemeColor" content="#ede4d7">
 <meta name="description" content="Census — finanzas personales">
 <title>Census</title>
-<!-- PWA manifest (ícono canónico: versión clara) -->
 <link rel="manifest" href="manifest.json">
-<!-- Íconos del SO: siempre la versión clara (los SO cachean el ícono instalado, no cambia por tema) -->
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<!-- Favicon dinámico: el id permite reemplazarlo via JS según el tema -->
-<link rel="icon" id="faviconLink" type="image/png" sizes="64x64" href="favicon-light-64.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-light-32.png">
+<link rel="apple-touch-icon" href="nuevo-icono-dark.png">
+<link rel="icon" id="faviconLink" type="image/png" href="nuevo-icono-dark.png">
 <!-- Anti-flash: aplicar el tema ANTES de que renderice el CSS, evita flash blanco al cargar -->
 <script>
 (function(){
@@ -2454,7 +2450,7 @@ function applyTheme(){
   d?sw.classList.add('on'):sw.classList.remove('on');
   // Favicon dinámico: cambia según el tema
   const fav=document.getElementById('faviconLink');
-  if(fav)fav.href=d?'favicon-dark-64.png':'favicon-light-64.png';
+  if(fav)fav.href='nuevo-icono-dark.png';
   // Theme-color del status bar del navegador: matchea el tema de la app
   const meta=document.getElementById('metaThemeColor');
   if(meta)meta.content=d?'#09090b':'#ede4d7';
