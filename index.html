@@ -45,7 +45,7 @@
   --teal:#5bc4c0;--teal-bg:rgba(91,196,192,0.10);
   --shadow-sm:0 1px 4px rgba(0,0,0,0.4);--shadow-md:0 4px 16px rgba(0,0,0,0.5);--shadow-lg:0 12px 40px rgba(0,0,0,0.65);
   --nav-bg:rgba(17,17,19,0.93);--topbar-bg:rgba(9,9,11,0.90);--noise:0.035;
-  --gold-hi:#f0d490;--bg-glow:radial-gradient(ellipse 110% 45% at 50% -8%,rgba(201,169,110,0.09),transparent);
+  --gold-hi:#fff8dc;--bg-glow:radial-gradient(ellipse 110% 45% at 50% -8%,rgba(201,169,110,0.09),transparent);
 }
 [data-theme="light"]{
   --bg-0:#f0ebe0;--bg-1:#f7f3ea;--bg-2:#fdfaf4;--bg-3:#faf6ee;--bg-4:#ede8de;--bg-5:#e0dbd0;
@@ -159,7 +159,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;b
 .cur-toggle-btn{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;font-weight:500;padding:5px 10px;background:transparent;border:none;color:var(--text-3);border-radius:6px;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent}
 .cur-toggle-btn.active{background:var(--gold);color:var(--bg-0)}
 .cur-toggle-btn:not(.active):hover{color:var(--text-1)}
-.kpi-hero-value{font-family:'EB Garamond',serif;font-size:52px;font-weight:400;letter-spacing:-1.5px;line-height:1;word-break:break-all;font-variant-numeric:lining-nums tabular-nums;font-feature-settings:'lnum','tnum';background:linear-gradient(140deg,var(--gold-hi) 0%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.kpi-hero-value{font-family:'EB Garamond',serif;font-size:52px;font-weight:400;letter-spacing:-1.5px;line-height:1;word-break:break-all;font-variant-numeric:lining-nums tabular-nums;font-feature-settings:'lnum','tnum';position:relative;z-index:1;background:linear-gradient(140deg,var(--gold-hi) 0%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .kpi-hero-value.neg{background:none;-webkit-background-clip:unset;-webkit-text-fill-color:var(--red);background-clip:unset}
 .kpi-hero-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-3);margin-top:8px}
 .kpi-hero-period{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:4px 10px;align-items:baseline}
@@ -3097,7 +3097,7 @@ function renderExpensePie(){
   }).join('');
   const sym=viewCurrency==='USD'?'U$S ':'$';
   const legend=topN.map(([name,val],i)=>`<div style="display:flex;align-items:center;gap:7px;min-height:17px"><span style="width:8px;height:8px;border-radius:2px;background:${COLORS[i%COLORS.length]};flex-shrink:0"></span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${esc(name)}</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-3)">${Math.round(val/total*100)}%</span></div>`).join('');
-  el.innerHTML=`<div class="expense-donut-wrap fu d3"><div class="expense-donut-title">Distribución de egresos</div><div style="display:flex;align-items:center;gap:18px"><svg width="80" height="80" viewBox="0 0 80 80" style="flex-shrink:0"><circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="var(--bg-4)" stroke-width="${SW}"/>${segs}</svg><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">${legend}</div></div></div>`;
+  el.innerHTML=`<div class="expense-donut-wrap fu d3"><div class="expense-donut-title">Distribución de egresos</div><div style="display:flex;align-items:center;gap:18px"><svg width="80" height="80" viewBox="-4 -4 88 88" style="flex-shrink:0"><circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="var(--bg-4)" stroke-width="${SW}"/>${segs}</svg><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">${legend}</div></div></div>`;
 }
 
 // ══ TRANSACTIONS ══
