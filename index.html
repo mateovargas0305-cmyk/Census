@@ -253,6 +253,11 @@ canvas{display:block}
 .tx-section-header-sep{margin-top:14px;border-top:1px solid var(--border);padding-top:14px}
 .tx-section-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text-3);text-transform:uppercase}
 .tx-section-count{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-4)}
+.tx-date-header{display:flex;align-items:center;gap:8px;padding:12px 2px 4px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--text-3)}
+.tx-date-header::after{content:'';flex:1;height:1px;background:var(--border)}
+.tx-filter-summary{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--gold-glow);border:1px solid var(--gold-dim);border-radius:10px;margin-bottom:8px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2);letter-spacing:.3px;animation:fadeUp .2s ease both}
+.expense-donut-wrap{background:var(--bg-2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow-sm)}
+.expense-donut-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
 .tx-fut-badge{display:inline-flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.5px;color:var(--gold-dim);background:var(--gold-glow);padding:1px 6px;border-radius:5px;margin-left:4px}
 .fut-hint{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold-dim);letter-spacing:.3px}
 .btn-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--bg-4);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;color:var(--text-3);transition:all .18s;-webkit-tap-highlight-color:transparent}
@@ -613,6 +618,9 @@ canvas{display:block}
 /* ══ TOAST ══ */
 .toast-container{position:fixed;bottom:calc(74px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
 .toast{background:var(--bg-3);border:1px solid var(--border-hi);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:500;color:var(--text-1);box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px;white-space:nowrap;animation:tIn .3s cubic-bezier(.34,1.56,.64,1) both}
+.toast.toast-undo{pointer-events:all;white-space:normal;position:relative;overflow:hidden;padding:11px 14px 15px;gap:0}
+.toast-undo-btn{background:none;border:1px solid var(--gold-dim);color:var(--gold);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;margin-left:12px;flex-shrink:0}
+.toast-undo-bar{position:absolute;bottom:0;left:0;height:2px;background:var(--gold);width:100%;opacity:.6}
 @keyframes tIn{from{transform:translateY(12px) scale(.9);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
 @keyframes tOut{from{opacity:1}to{transform:translateY(-8px) scale(.95);opacity:0}}
 
@@ -925,6 +933,7 @@ canvas{display:block}
         <div class="kpi-mini-count" id="kpiSavingsCount">0 mov.</div>
       </div>
     </div>
+    <div id="expensePieMount"></div>
     <div class="sc fu d3">
       <div class="sc-title">Evolución del saldo</div>
       <div class="sc-sub">acumulado en el período</div>
@@ -2969,6 +2978,7 @@ function renderDashboard(){
   renderBalChart(f);
   renderCatBars(f,'catList');
   renderRecentList(f);
+  renderExpensePie();
 }
 
 // Saldo acumulado hasta una fecha (exclusivo) — solo en la moneda de vista actual
@@ -3054,6 +3064,42 @@ function renderRecentList(f){
     </div>`).join('');
 }
 
+function txDateLabel(dateStr){
+  const t=todayStr();
+  const y=toLocalDateStr(new Date(Date.now()-86400000));
+  if(dateStr===t)return'Hoy';
+  if(dateStr===y)return'Ayer';
+  const d=strToDate(dateStr);
+  const diffDays=Math.round((Date.now()-d.getTime())/86400000);
+  if(diffDays<7)return d.toLocaleDateString('es-AR',{weekday:'long'}).replace(/^\w/,c=>c.toUpperCase());
+  return d.toLocaleDateString('es-AR',{day:'numeric',month:'short'}).replace(/\./g,'');
+}
+
+function renderExpensePie(){
+  const el=document.getElementById('expensePieMount');
+  if(!el)return;
+  const f=filterByViewCurrency(filterByPeriod(transactions)).filter(t=>t.type==='expense'&&!t.pendingConfirmation);
+  if(!f.length){el.innerHTML='';return;}
+  const byCat={};
+  f.forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
+  const total=Object.values(byCat).reduce((s,v)=>s+v,0);
+  const sorted=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const topN=sorted.slice(0,5);
+  const othersAmt=sorted.slice(5).reduce((s,[,v])=>s+v,0);
+  if(othersAmt>0)topN.push(['Otros',othersAmt]);
+  const COLORS=['var(--red)','var(--gold)','var(--teal)','var(--green)','#9b7fe8','var(--text-3)'];
+  const R=36,CX=40,CY=40,SW=14,circ=2*Math.PI*R;
+  let offset=0;
+  const segs=topN.map(([,val],i)=>{
+    const len=(val/total)*circ;
+    const s=`<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${COLORS[i%COLORS.length]}" stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${circ.toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 ${CX} ${CY})"/>`;
+    offset+=len;return s;
+  }).join('');
+  const sym=viewCurrency==='USD'?'U$S ':'$';
+  const legend=topN.map(([name,val],i)=>`<div style="display:flex;align-items:center;gap:7px;min-height:17px"><span style="width:8px;height:8px;border-radius:2px;background:${COLORS[i%COLORS.length]};flex-shrink:0"></span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${esc(name)}</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-3)">${Math.round(val/total*100)}%</span></div>`).join('');
+  el.innerHTML=`<div class="expense-donut-wrap fu d3"><div class="expense-donut-title">Distribución de egresos</div><div style="display:flex;align-items:center;gap:18px"><svg width="80" height="80" viewBox="0 0 80 80" style="flex-shrink:0"><circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="var(--bg-4)" stroke-width="${SW}"/>${segs}</svg><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">${legend}</div></div></div>`;
+}
+
 // ══ TRANSACTIONS ══
 function renderTransactions(){
   // La lista "Ya ocurridas" excluye las tx con pendingConfirmation (van en "Próximas") y filtra por moneda actual de vista.
@@ -3068,7 +3114,11 @@ function renderTransactions(){
   if(window._showingGenerated&&justGeneratedTxIds.length){
     list=list.filter(t=>justGeneratedTxIds.includes(t.id));
   }
-  list.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  list.sort((a,b)=>{
+    const dd=new Date(b.date)-new Date(a.date);
+    if(dd!==0)return dd;
+    return transactions.indexOf(b)-transactions.indexOf(a); // más reciente (mayor índice) primero
+  });
 
   // Tx futuras (también filtradas por moneda)
   let futureList=filterByViewCurrency(getFutureTransactions());
@@ -3086,7 +3136,7 @@ function renderTransactions(){
     return;
   }
 
-  const renderCard=tx=>{
+  const renderCard=(tx,hideDate=false)=>{
     const isTransfer=tx.type==='transfer';
     const today=new Date();today.setHours(23,59,59,999);
     const isFuture=new Date(tx.date+'T12:00:00')>today;
@@ -3121,7 +3171,7 @@ function renderTransactions(){
         <div class="tx-card-body">
           <div class="tx-card-desc-row">
             <div class="tx-card-desc">${esc(displayDesc)}${recBadge}${futBadge}</div>
-            <span class="tx-card-date-inline">${fmtDate(tx.date)}</span>
+            ${hideDate?'':` <span class="tx-card-date-inline">${fmtDate(tx.date)}</span>`}
           </div>
           ${tx.note?`<div class="tx-card-note">${esc(tx.note)}</div>`:''}
           <div class="tx-card-meta">
@@ -3141,20 +3191,35 @@ function renderTransactions(){
     </div>`;
   };
 
+  // Summary de filtro activo
+  const hasFilter=q||tf!=='all'||cf!=='all';
   let html='';
+  if(hasFilter&&list.length){
+    const fTotal=list.reduce((s,t)=>s+(t.type==='income'?t.amount:-t.amount),0);
+    const sym=viewCurrency==='USD'?'U$S ':'$';
+    const sign=fTotal>=0?'+':'−';
+    html+=`<div class="tx-filter-summary"><span>${list.length} resultado${list.length!==1?'s':''}</span><span>${sign}${sym}${fmtNum(Math.abs(fTotal),0)}</span></div>`;
+  }
+
   if(futureList.length){
     html+=`<div class="tx-section-header">
       <span class="tx-section-title">Próximas</span>
       <span class="tx-section-count">${futureList.length} mov. futuro${futureList.length!==1?'s':''}</span>
     </div>`;
-    html+=futureList.map(renderCard).join('');
-    if(list.length){
-      html+=`<div class="tx-section-header tx-section-header-sep">
-        <span class="tx-section-title">Ya ocurridas</span>
-      </div>`;
-    }
+    html+=futureList.map(tx=>renderCard(tx,false)).join('');
+    if(list.length) html+=`<div class="tx-section-header tx-section-header-sep"><span class="tx-section-title">Ya ocurridas</span></div>`;
   }
-  html+=list.map(renderCard).join('');
+
+  // Agrupación por fecha
+  if(list.length){
+    const groups={};
+    list.forEach(tx=>{if(!groups[tx.date])groups[tx.date]=[];groups[tx.date].push(tx);});
+    Object.keys(groups).sort((a,b)=>b.localeCompare(a)).forEach(dateStr=>{
+      html+=`<div class="tx-date-header"><span>${txDateLabel(dateStr)}</span></div>`;
+      html+=groups[dateStr].map(tx=>renderCard(tx,true)).join('');
+    });
+  }
+
   el.innerHTML=html;
 
   [...list,...futureList].forEach(tx=>attachSwipe(tx.id));
@@ -3822,10 +3887,39 @@ function editTx(id){
   if(sa)sa.style.opacity=0;
   openModal(id);
 }
-async function deleteTx(id){
-  if(!await customConfirm('¿Eliminar este movimiento?',{danger:true,okLabel:'Eliminar'}))return;
+let _pendingDelete=null;
+
+function deleteTx(id){
+  const tx=transactions.find(t=>t.id===id);
+  if(!tx)return;
+  // Confirmar cualquier delete pendiente antes de iniciar uno nuevo
+  if(_pendingDelete){clearTimeout(_pendingDelete.timer);transactions=transactions.filter(t=>t.id!==_pendingDelete.id);saveData();_pendingDelete=null;}
   transactions=transactions.filter(t=>t.id!==id);
-  saveData();renderAll();showToast('Eliminado','info');
+  _pendingDelete={id,tx,timer:null};
+  renderAll();
+  // Toast con undo
+  const existing=document.querySelector('.toast-undo');if(existing)existing.remove();
+  const toastEl=document.createElement('div');
+  toastEl.className='toast toast-undo';
+  toastEl.innerHTML=`<span style="flex:1;font-size:13px;font-weight:500">Eliminado</span><button class="toast-undo-btn" onclick="_undoDelete()">Deshacer</button><div class="toast-undo-bar"></div>`;
+  document.getElementById('toastContainer').appendChild(toastEl);
+  requestAnimationFrame(()=>{const b=toastEl.querySelector('.toast-undo-bar');if(b){b.style.transition='width 4s linear';b.style.width='0%';}});
+  _pendingDelete.timer=setTimeout(()=>{
+    toastEl.style.animation='tOut .25s ease forwards';
+    setTimeout(()=>toastEl.remove(),250);
+    saveData();_pendingDelete=null;
+  },4000);
+}
+
+function _undoDelete(){
+  if(!_pendingDelete)return;
+  clearTimeout(_pendingDelete.timer);
+  const {tx}=_pendingDelete;_pendingDelete=null;
+  transactions.push(tx);
+  transactions.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  renderAll();
+  const te=document.querySelector('.toast-undo');if(te){te.style.animation='tOut .25s ease forwards';setTimeout(()=>te.remove(),250);}
+  showToast('Movimiento restaurado','success');
 }
 
 // ══ GOAL MODAL ══
